@@ -99,7 +99,7 @@ We need to allow users of the `wheel` group to use sudo
 
 Run `EDITOR=nano visudo` to open the sudoers file
 
-Find the line that says `%wheel ALL=(ALL:ALL) ALL`
+Find the line that says `%wheel ALL=(ALL:ALL) ALL` and uncomment it.
 
 ### Creating user(s)
 We will now setup user accounts
@@ -124,17 +124,33 @@ console-mode max
 editor no
 ```
 
-Run `blkid` to get the UUID's of all the partitions, on the large partition you made you should see something that says `UUID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"` write this down 
-
 Run `nano /boot/loader/entries/arch.conf` and write
 ```
 title Arch Linux
 linux /vmlinuz-linux
 initrd /intel-ucode.img
 initrd /initramfs-linux.img
+options root=
+```
+
+Run the following command to append the drive uuid to the file
+
+`blkid | awk -F' '/<driveid>/ { gsub(/"/, "", $2) print $2" rw"} - >> /boot/loader/entries/arch.conf`
+ - Drive ID can be found using lsblk, this should be the driveid of the bigger partition (excluding `/dev/`)
+
+
+Then open `/boot/loader/entries/arch.conf` to verify the UUID is on the same line as the `options root=` line
+
+Example below
+```
+title Arch Linux
+linux /vmlinuz-linux
+
+initrd /intel-ucode.img
+initrd /initramfs-linux.img
 options root=UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx rw
 ```
-The x's should be replaced with the UUID that was shown
+The x's should be replaced with the UUID that was inserted
 
 ### Installing the microcode
 Intel users, Run `pacman -S intel-ucode`
@@ -148,3 +164,39 @@ Run `reboot` and remove installation media once fully off
 On reboot enter BIOS and make sure that Linux Boot Manager has the highest priority
 
 # Arch is now installed :)
+
+
+---
+
+# First boot
+
+## DHCP
+To aquire a IP, enable and start the `dhcpcd` service
+
+Run `sudo systemctl enable dhcpcd` and `sudo systemctl start dhcpcd`
+
+Run `ip address` and after a second, you should see your main interface should have a IP
+
+## yay
+Yay is a package manager that combines pacman packages and Arch AUR packages into one command, it automaticially builds the package and installs it for you
+
+To install run the following commands
+```bash
+sudo pacman -S base-devel git
+git clone https://aur.archlinux.org/yay.git
+cd yay
+makepkg -si
+```
+
+## DE or Window Manager
+At this point, you may want to install a WM or a DE, there are many to choose, but in my experience KDE Plasma works exectionally well
+
+Below are some links to the Arch Docs for how to install some of the Famous ones
+
+[KDE Plasma](https://wiki.archlinux.org/title/KDE)
+
+[GNOME](https://wiki.archlinux.org/title/GNOME)
+
+[dwm](https://wiki.archlinux.org/title/dwm)
+
+[i3](https://wiki.archlinux.org/title/i3)
